@@ -10,14 +10,14 @@
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
     <!-- Chosen Palette: Soft Corporate Teal -->
-    <!-- Application Structure Plan: The application is designed as an interactive dashboard and explainer. It starts with a high-level summary of the final ICCP amount. It then breaks down the calculation into two distinct, collapsible sections: "ICCP 1 (Reliquat)" and "ICCP 2 (Acquisition en cours)". This separation clarifies the two different periods of rights. The most complex part, the accrual calculation for ICCP 2, features an interactive toggle allowing users to compare the "simple" monthly method with the more precise "équitable" method based on 4-week periods, demonstrating why the latter is more favorable. Each calculation step visually compares the 'Maintien' and '1/10e' methods side-by-side using cards and a bar chart, highlighting the most advantageous result. This structure was chosen to transform a static report into a dynamic learning tool, guiding the user from the final result down to the detailed legal justifications, which improves comprehension and engagement. -->
+    <!-- Application Structure Plan: The application is designed as an interactive dashboard and explainer. A new "Configuration" panel at the top allows users to input custom case data (salary, days, base 1/10th), making the simulator reusable. It then breaks down the calculation into two distinct, collapsible sections: "ICCP 1 (Reliquat)" and "ICCP 2 (Acquisition en cours)". This separation clarifies the two different periods of rights. The most complex part, the accrual calculation for ICCP 2, features an interactive toggle allowing users to compare the "simple" monthly method with the more precise "équitable" method based on 4-week periods. Each calculation step visually compares the 'Maintien' and '1/10e' methods side-by-side using cards and a bar chart, highlighting the most advantageous result. This structure was chosen to transform a static report into a dynamic learning tool, guiding the user from the final result down to the detailed legal justifications, which improves comprehension and engagement. -->
     <!-- Visualization & Content Choices: 
         - Key Metrics (e.g., total ICCP, days to pay): Displayed in prominent "stat cards" for immediate clarity (Goal: Inform, Method: HTML/CSS).
+        - User Inputs: New form inputs are used to collect case data and dynamically update the entire application state (Goal: Interact/Configure, Method: HTML Forms + JS event listeners).
         - Maintien vs. 1/10e Comparison: Presented in side-by-side cards and reinforced with a simple Bar Chart from Chart.js for each ICCP period. This visual comparison makes it easy to see which method is more favorable (Goal: Compare, Method: HTML/CSS + Chart.js/Canvas).
         - Accrual Method Explanation: An interactive toggle button group allows users to switch between the "simple" and "équitable" calculation for days accrued in period N. This dynamic element directly demonstrates the impact of the legal rule of equivalence (Goal: Explain/Organize, Method: JS interaction updating text blocks).
         - Final Summary: A clear, non-interactive summary block adds the two ICCP components to show the total (Goal: Inform, Method: HTML/CSS).
-        - Legal Explanations (e.g., sums to reintegrate): Placed in an expandable details/summary section to provide context without cluttering the main view (Goal: Inform, Method: HTML).
-        - All choices adhere to the NO SVG/Mermaid constraint. The structure is designed to be explorable rather than a linear document. -->
+        - All choices adhere to the NO SVG/Mermaid constraint. -->
     <!-- CONFIRMATION: NO SVG graphics used. NO Mermaid JS used. -->
     <style>
         body {
@@ -61,6 +61,17 @@
             color: white;
             border-color: #0d9488; /* teal-600 */
         }
+        .input-group label {
+            font-weight: 500;
+            color: #475569;
+        }
+        .input-group input {
+            width: 100%;
+            padding: 0.5rem;
+            border: 1px solid #e2e8f0;
+            border-radius: 0.375rem;
+            margin-top: 0.25rem;
+        }
     </style>
 </head>
 <body class="text-slate-800">
@@ -69,10 +80,49 @@
 
         <header class="text-center mb-8">
             <h1 class="text-3xl sm:text-4xl font-bold text-slate-900">Simulateur d'Indemnité de Congés Payés (ICCP)</h1>
-            <p class="mt-2 text-lg text-slate-600">Basé sur un cas de départ au 28 février N.</p>
+            <p class="mt-2 text-lg text-slate-600">Un outil réutilisable pour tous vos cas de rupture de contrat.</p>
         </header>
 
         <main>
+            <!-- Nouvelle Section de Saisie des Données -->
+            <details class="card mb-8 bg-teal-50" open>
+                <summary class="flex justify-between items-center font-bold text-xl text-teal-700">
+                    <span>
+                        ⚙️ Configuration du Cas (Saisir les données)
+                    </span>
+                    <span class="text-2xl transform transition-transform duration-300 open:rotate-90 text-teal-400">&blacktriangleright;</span>
+                </summary>
+                <div class="mt-4 pt-4 border-t border-teal-200">
+                    <div class="grid md:grid-cols-3 gap-6">
+                        <div class="input-group">
+                            <label for="salaireRef">Salaire mensuel de référence (Maintien - Brut)</label>
+                            <input type="number" id="salaireRef" value="2250.00" step="0.01">
+                        </div>
+                        <div class="input-group">
+                            <label for="baseDixieme">Base Annuelle du 1/10e (Période N-1 à N)</label>
+                            <input type="number" id="baseDixieme" value="25000.00" step="0.01">
+                        </div>
+                        <div class="input-group">
+                            <label for="reliquatJoursN1">Jours de reliquat N-1 (non pris)</label>
+                            <input type="number" id="reliquatJoursN1" value="6" step="1">
+                        </div>
+                        <div class="input-group">
+                            <label for="joursTravaillesN">Jours travaillés sur la période N (Exemple: 273)</label>
+                            <input type="number" id="joursTravaillesN" value="273" step="1">
+                        </div>
+                        <div class="input-group">
+                            <label for="diviseurOuvrables">Diviseur Jour Ouvrable (Ex: 26)</label>
+                            <input type="number" id="diviseurOuvrables" value="26" step="1">
+                        </div>
+                        <div class="input-group">
+                            <label for="joursAcquisAnnuels">Jours acquis annuels (Ex: 30)</label>
+                            <input type="number" id="joursAcquisAnnuels" value="30" step="1">
+                        </div>
+                    </div>
+                    <p class="mt-4 text-sm text-teal-600">Modifiez les valeurs ci-dessus pour simuler un nouveau cas. Le calcul se met à jour automatiquement.</p>
+                </div>
+            </details>
+            
             <!-- Section Résultat Final -->
             <section id="summary" class="card mb-8">
                 <h2 class="text-2xl font-bold text-center text-teal-700 mb-4">Montant Total de l'ICCP à Verser</h2>
@@ -173,7 +223,7 @@
                         <span class="text-2xl transform transition-transform duration-300 open:rotate-90 text-slate-400">&blacktriangleright;</span>
                     </summary>
                     <div class="mt-4 pt-4 border-t border-slate-200 prose max-w-none text-slate-600">
-                        <p>La base de calcul pour la règle du dixième (ici, <strong>25 000,00 €</strong>) est cruciale. Selon l'Article L3141-24 du Code du travail, elle doit inclure toutes les sommes ayant le caractère de salaire perçues pendant la période de référence.</p>
+                        <p>La base de calcul pour la règle du dixième est cruciale. Selon l'Article L3141-24 du Code du travail, elle doit inclure toutes les sommes ayant le caractère de salaire perçues pendant la période de référence. La valeur utilisée dans le calcul est la valeur saisie ci-dessus : <strong id="current-base-dixieme"></strong>.</p>
                         <div class="grid md:grid-cols-2 gap-4 mt-4">
                             <div class="bg-green-50 p-4 rounded-lg border border-green-200">
                                 <h4 class="font-semibold text-green-800">✅ Sommes à RÉINTÉGRER</h4>
@@ -200,7 +250,7 @@
         </main>
 
         <footer class="text-center mt-12 text-sm text-slate-500">
-            <p>Ce simulateur est un outil pédagogique basé sur les données de l'exercice fourni. Il ne remplace pas un bulletin de paie officiel.</p>
+            <p>Ce simulateur est un outil pédagogique basé sur les données saisies par l'utilisateur. Il ne remplace pas un bulletin de paie officiel.</p>
         </footer>
 
     </div>
@@ -208,20 +258,31 @@
     <script>
         document.addEventListener('DOMContentLoaded', () => {
 
-            const data = {
-                salaireRef: 2250.00,
-                baseDixieme: 25000.00,
-                diviseurOuvrables: 26,
-                joursAcquisAnnuels: 30,
-                reliquatJoursN1: 6,
-                joursTravaillesN: 273,
+            const inputs = {
+                salaireRef: document.getElementById('salaireRef'),
+                baseDixieme: document.getElementById('baseDixieme'),
+                diviseurOuvrables: document.getElementById('diviseurOuvrables'),
+                joursAcquisAnnuels: document.getElementById('joursAcquisAnnuels'),
+                reliquatJoursN1: document.getElementById('reliquatJoursN1'),
+                joursTravaillesN: document.getElementById('joursTravaillesN'),
             };
 
             const formatCurrency = (value) => new Intl.NumberFormat('fr-FR', { style: 'currency', currency: 'EUR' }).format(value);
 
-            let acquisitionMode = 'equitable'; // 'equitable' or 'simple'
+            let acquisitionMode = 'equitable'; 
 
             const charts = {};
+
+            function getData() {
+                return {
+                    salaireRef: parseFloat(inputs.salaireRef.value) || 0,
+                    baseDixieme: parseFloat(inputs.baseDixieme.value) || 0,
+                    diviseurOuvrables: parseInt(inputs.diviseurOuvrables.value) || 26,
+                    joursAcquisAnnuels: parseInt(inputs.joursAcquisAnnuels.value) || 30,
+                    reliquatJoursN1: parseInt(inputs.reliquatJoursN1.value) || 0,
+                    joursTravaillesN: parseInt(inputs.joursTravaillesN.value) || 0,
+                };
+            }
 
             function createChart(canvasId, labels, data) {
                 const ctx = document.getElementById(canvasId).getContext('2d');
@@ -235,8 +296,8 @@
                         datasets: [{
                             label: 'Montant en €',
                             data: data,
-                            backgroundColor: ['#64748b', '#334155'], // slate-500, slate-700
-                            borderColor: ['#94a3b8', '#475569'], // slate-400, slate-600
+                            backgroundColor: ['#64748b', '#334155'],
+                            borderColor: ['#94a3b8', '#475569'],
                             borderWidth: 1,
                             borderRadius: 5,
                         }]
@@ -272,32 +333,39 @@
                 });
             }
 
-            function updateExplanationBox(joursAcquis, joursArrondis) {
+            function updateExplanationBox(joursAcquis, joursArrondis, joursTravaillesN) {
                 const box = document.getElementById('explanation-box');
+                const monthsSimple = 9; // Placeholder for the original example's 9 months (June N-1 to Feb N)
+
                 if (acquisitionMode === 'equitable') {
                     box.innerHTML = `
                         <p class="font-semibold text-slate-800">Calcul par Périodes de 4 Semaines (28 jours)</p>
                         <p class="text-sm text-slate-600">Cette méthode plus précise est basée sur le temps de travail réel.</p>
-                        <p class="text-sm text-slate-500 mt-2 font-mono bg-slate-100 p-2 rounded">(${data.joursTravaillesN} jours / 28) x 2.5 = <strong>${joursAcquis.toFixed(2)} jours</strong></p>
+                        <p class="text-sm text-slate-500 mt-2 font-mono bg-slate-100 p-2 rounded">(${joursTravaillesN} jours / 28) x 2.5 = <strong>${joursAcquis.toFixed(2)} jours</strong></p>
                         <p class="mt-2 text-sm text-slate-700">La loi impose l'arrondi à l'entier supérieur, soit <strong class="text-teal-700 font-bold">${joursArrondis} jours</strong>.</p>
                     `;
                 } else {
                     box.innerHTML = `
                         <p class="font-semibold text-slate-800">Calcul par Mois Complets</p>
-                        <p class="text-sm text-slate-600">Une méthode simple, mais souvent moins favorable.</p>
-                        <p class="text-sm text-slate-500 mt-2 font-mono bg-slate-100 p-2 rounded">9 mois x 2.5 = <strong>${joursAcquis.toFixed(2)} jours</strong></p>
+                        <p class="text-sm text-slate-600">Une méthode simple, mais souvent moins favorable. (Basée ici sur 9 mois complets)</p>
+                        <p class="text-sm text-slate-500 mt-2 font-mono bg-slate-100 p-2 rounded">${monthsSimple} mois x 2.5 = <strong>${joursAcquis.toFixed(2)} jours</strong></p>
                         <p class="mt-2 text-sm text-slate-700">La loi impose l'arrondi à l'entier supérieur, soit <strong class="text-teal-700 font-bold">${joursArrondis} jours</strong>.</p>
                     `;
                 }
             }
             
             function updateUI() {
+                const data = getData();
+                
+                // Mettre à jour la base du dixième dans la section explicative
+                document.getElementById('current-base-dixieme').textContent = formatCurrency(data.baseDixieme);
+
                 // ICCP 1 - Reliquat
                 const joursReliquat = data.reliquatJoursN1;
                 document.getElementById('reliquat-days').textContent = `${joursReliquat} jours`;
 
-                const maintien1 = (data.salaireRef / data.diviseurOuvrables) * joursReliquat;
-                const dixieme1 = (data.baseDixieme * 0.10 / data.joursAcquisAnnuels) * joursReliquat;
+                const maintien1 = (data.diviseurOuvrables > 0) ? (data.salaireRef / data.diviseurOuvrables) * joursReliquat : 0;
+                const dixieme1 = (data.joursAcquisAnnuels > 0) ? (data.baseDixieme * 0.10 / data.joursAcquisAnnuels) * joursReliquat : 0;
 
                 document.getElementById('iccp1-maintien-amount').textContent = formatCurrency(maintien1);
                 document.getElementById('iccp1-maintien-formula').textContent = `(${formatCurrency(data.salaireRef)} / ${data.diviseurOuvrables}) x ${joursReliquat} jours`;
@@ -305,7 +373,7 @@
                 document.getElementById('iccp1-dixieme-formula').textContent = `(${formatCurrency(data.baseDixieme)} x 10% / ${data.joursAcquisAnnuels}) x ${joursReliquat} jours`;
                 
                 const favorable1 = Math.max(maintien1, dixieme1);
-                const favorableMethod1 = maintien1 > dixieme1 ? 'Maintien' : 'Dixième';
+                const favorableMethod1 = maintien1 >= dixieme1 ? 'Maintien' : 'Dixième';
 
                 document.getElementById('iccp1-favorable-method').textContent = favorableMethod1;
                 document.getElementById('iccp1-favorable-amount').textContent = formatCurrency(favorable1);
@@ -318,19 +386,21 @@
 
                 // ICCP 2 - Acquisition
                 let joursAcquisN, joursArrondisN;
+                const monthsSimple = 9; // Keeping 9 months as the simple (less accurate) reference
+
                 if(acquisitionMode === 'equitable') {
-                    joursAcquisN = (data.joursTravaillesN / 28) * 2.5;
+                    joursAcquisN = (data.joursTravaillesN > 0) ? (data.joursTravaillesN / 28) * 2.5 : 0;
                     joursArrondisN = Math.ceil(joursAcquisN);
                 } else {
-                    joursAcquisN = 9 * 2.5;
+                    joursAcquisN = monthsSimple * 2.5;
                     joursArrondisN = Math.ceil(joursAcquisN);
                 }
                 
-                updateExplanationBox(joursAcquisN, joursArrondisN);
+                updateExplanationBox(joursAcquisN, joursArrondisN, data.joursTravaillesN);
                 document.getElementById('acquisition-days').textContent = `${joursArrondisN} jours`;
 
-                const maintien2 = (data.salaireRef / data.diviseurOuvrables) * joursArrondisN;
-                const dixieme2 = (data.baseDixieme * 0.10 / data.joursAcquisAnnuels) * joursArrondisN;
+                const maintien2 = (data.diviseurOuvrables > 0) ? (data.salaireRef / data.diviseurOuvrables) * joursArrondisN : 0;
+                const dixieme2 = (data.joursAcquisAnnuels > 0) ? (data.baseDixieme * 0.10 / data.joursAcquisAnnuels) * joursArrondisN : 0;
 
                 document.getElementById('iccp2-maintien-amount').textContent = formatCurrency(maintien2);
                 document.getElementById('iccp2-maintien-formula').textContent = `(${formatCurrency(data.salaireRef)} / ${data.diviseurOuvrables}) x ${joursArrondisN} jours`;
@@ -338,7 +408,7 @@
                 document.getElementById('iccp2-dixieme-formula').textContent = `(${formatCurrency(data.baseDixieme)} x 10% / ${data.joursAcquisAnnuels}) x ${joursArrondisN} jours`;
                 
                 const favorable2 = Math.max(maintien2, dixieme2);
-                const favorableMethod2 = maintien2 > dixieme2 ? 'Maintien' : 'Dixième';
+                const favorableMethod2 = maintien2 >= dixieme2 ? 'Maintien' : 'Dixième';
 
                 document.getElementById('iccp2-favorable-method').textContent = favorableMethod2;
                 document.getElementById('iccp2-favorable-amount').textContent = formatCurrency(favorable2);
@@ -354,7 +424,7 @@
                 document.getElementById('total-iccp').textContent = formatCurrency(totalIccp);
             }
 
-            // Event Listeners for toggle
+            // Event Listeners for toggle (Equitable/Simple)
             const btnEquitable = document.getElementById('toggle-equitable');
             const btnSimple = document.getElementById('toggle-simple');
             
@@ -370,6 +440,11 @@
                 btnSimple.classList.add('active');
                 btnEquitable.classList.remove('active');
                 updateUI();
+            });
+
+            // Event Listeners for input changes
+            Object.values(inputs).forEach(input => {
+                input.addEventListener('input', updateUI);
             });
             
             // Initial call
